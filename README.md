@@ -51,7 +51,27 @@ set CALEB_PASSWORD=1716
 
 ## Local development
 
-Install Node.js on the PC, then run:
+Install Node.js on the PC first. If Command Prompt says `'npm' is not recognized`, Node.js is not installed or the Command Prompt was opened before Node.js was installed.
+
+1. Install the LTS version of Node.js from `https://nodejs.org/`.
+2. Close Command Prompt.
+3. Open a new Command Prompt.
+4. Check that Node/npm work:
+
+```cmd
+node -v
+npm -v
+```
+
+Then go to the folder where you copied or downloaded this project. On Windows this will look like your own folder path, not `/workspace`.
+
+Example:
+
+```cmd
+cd C:\Users\Keith-PC\Desktop\Workshop-Sign-In-System
+```
+
+Then run:
 
 ```cmd
 npm install
@@ -75,8 +95,8 @@ npm start
 
 Open:
 
-- PC: `http://localhost:3000`
-- Tablet on same network: `http://PC-IP-ADDRESS:3000`
+- PC: `http://localhost:3005`
+- Tablet on same network: `http://PC-IP-ADDRESS:3005`
 
 Keep the Command Prompt window running, or use Windows Task Scheduler/NSSM to run `npm start` when the PC starts.
 
@@ -94,6 +114,7 @@ Copy the whole project folder to the new PC, including:
 Then on the new PC:
 
 ```cmd
+cd C:\Path\To\Workshop-Sign-In-System
 npm install
 npm start
 ```
