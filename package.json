@@ -1,0 +1,54 @@
+{
+  "name": "workshop-sign-in-system",
+  "version": "1.0.0",
+  "description": "Local-first workshop employee sign-in and timesheet system.",
+  "type": "module",
+  "main": "server/src/server.js",
+  "scripts": {
+    "dev": "concurrently \"vite --host 0.0.0.0\" \"node --watch server/src/server.js\"",
+    "build": "vite build",
+    "start": "npm run build && node server/src/server.js",
+    "start:nfc": "npm run build && concurrently \"node server/src/server.js\" \"python scripts/acr122u_bridge.py\"",
+    "nfc:windows": "python scripts/acr122u_bridge.py",
+    "serve": "node server/src/server.js",
+    "check": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cosanetau/NFC-local-softwere.git"
+  },
+  "keywords": [
+    "workshop",
+    "timesheet",
+    "nfc",
+    "sqlite"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Cosanetau/NFC-local-softwere/issues"
+  },
+  "homepage": "https://github.com/Cosanetau/NFC-local-softwere#readme",
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.10.0",
+    "concurrently": "^10.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.17.0",
+    "vite": "^8.0.16"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^6.0.3"
+  }
+}
