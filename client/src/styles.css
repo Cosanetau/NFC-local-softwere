@@ -2,6 +2,9 @@
   color: #1f2937;
   background: #eef2f7;
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  touch-action: manipulation;
 }
 
 * {
@@ -10,6 +13,11 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
 }
 
 a {
@@ -31,6 +39,9 @@ button,
   justify-content: center;
   min-height: 44px;
   padding: 0.75rem 1rem;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 button.secondary {
@@ -45,7 +56,7 @@ input,
 select {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 16px;
   min-height: 42px;
   padding: 0.55rem 0.7rem;
   width: 100%;
@@ -88,59 +99,76 @@ th {
 
 .kiosk {
   align-items: center;
+  background:
+    radial-gradient(circle at top left, rgba(15, 76, 129, 0.16), transparent 34rem),
+    linear-gradient(135deg, #eef6ff 0%, #f8fafc 48%, #e2e8f0 100%);
   display: flex;
   justify-content: center;
   min-height: 100vh;
-  padding: 1rem;
+  min-height: 100dvh;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
 }
 
 .kiosk-card {
-  max-width: 760px;
-  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: min(920px, 100%);
+  min-height: min(720px, calc(100dvh - 2rem));
   text-align: center;
   width: 100%;
 }
 
 .kiosk h1 {
-  font-size: clamp(2.5rem, 7vw, 5rem);
-  margin-bottom: 2rem;
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  line-height: 0.95;
+  margin: 0 0 clamp(2rem, 5vh, 4rem);
 }
 
 .tap {
   color: #0f4c81;
-  font-size: clamp(2rem, 6vw, 4rem);
+  font-size: clamp(2.5rem, 7vw, 5.5rem);
   font-weight: 800;
+  line-height: 1.05;
+  margin: 0 auto;
+  max-width: 720px;
 }
 
 .welcome {
-  font-size: clamp(2rem, 5vw, 4rem);
+  font-size: clamp(2.6rem, 6vw, 5.2rem);
   font-weight: 800;
+  line-height: 1.05;
+  margin: 0 0 0.75rem;
 }
 
 .status {
   color: #475569;
-  font-size: 1.3rem;
+  font-size: clamp(1.25rem, 2.4vw, 1.8rem);
+  margin: 0.5rem 0 1.5rem;
 }
 
 .pin {
   display: block;
-  font-size: 2rem;
-  letter-spacing: 0.3rem;
-  margin: 1rem auto;
-  max-width: 360px;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  letter-spacing: 0.35rem;
+  margin: 1.25rem auto;
+  max-width: 440px;
+  min-height: 76px;
   text-align: center;
 }
 
 .actions {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  margin-top: 1.5rem;
+  gap: clamp(1rem, 2vw, 1.5rem);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: 2rem;
 }
 
 .actions button {
-  font-size: 1.25rem;
-  min-height: 84px;
+  border-radius: 18px;
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
+  min-height: 112px;
+  padding: 1.25rem;
 }
 
 .success,
@@ -163,7 +191,7 @@ th {
 
 .simulator {
   border-top: 1px solid #e5e7eb;
-  margin-top: 2rem;
+  margin-top: auto;
   padding-top: 1rem;
   text-align: left;
 }
@@ -279,6 +307,43 @@ th {
   .header {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  .kiosk-card {
+    min-height: calc(100dvh - 2rem);
+  }
+
+  .actions {
+    grid-template-columns: 1fr;
+  }
+
+  .actions button {
+    min-height: 104px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 780px) {
+  .kiosk-card {
+    min-height: calc(100dvh - 2rem);
+  }
+
+  .kiosk h1 {
+    font-size: clamp(2.6rem, 7vh, 5rem);
+    margin-bottom: clamp(1rem, 3vh, 2rem);
+  }
+
+  .tap {
+    font-size: clamp(2.25rem, 8vh, 4.5rem);
+  }
+
+  .welcome {
+    font-size: clamp(2.2rem, 7vh, 4.2rem);
+  }
+
+  .actions button {
+    min-height: 88px;
   }
 }
 
