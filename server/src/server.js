@@ -9,6 +9,7 @@ import {
   changeEmployeePin,
   createEmployee,
   deleteTimeEvent,
+  findAdminEmployeeByName,
   findUserByEmail,
   getAllTimesheets,
   getAllowedActions,
@@ -50,22 +51,38 @@ app.get("/api/health", (_request, response) => {
 });
 
 app.post("/api/auth/login", (request, response) => {
-  const { email, password } = request.body || {};
-  const user = email ? findUserByEmail(email) : null;
+  const { email, identifier, password } = request.body || {};
+  const loginName = String(identifier || email || "").trim();
+  const user = loginName ? findUserByEmail(loginName) : null;
 
-  if (!user || !verifyPassword(String(password || ""), user.password_hash)) {
-    response.status(401).json({ error: "Invalid email or password." });
+  if (user && verifyPassword(String(password || ""), user.password_hash)) {
+    const token = crypto.randomUUID();
+    tokens.set(token, {
+      id: user.id,
+      email: user.email,
+      displayName: user.email,
+      role: user.role,
+    });
+
+    response.json({ token, user: tokens.get(token) });
     return;
   }
 
-  const token = crypto.randomUUID();
-  tokens.set(token, {
-    id: user.id,
-    email: user.email,
-    role: user.role,
-  });
+  const adminEmployee = loginName ? findAdminEmployeeByName(loginName) : null;
+  if (adminEmployee && adminEmployee.admin_password_hash && verifyPassword(String(password || ""), adminEmployee.admin_password_hash)) {
+    const token = crypto.randomUUID();
+    tokens.set(token, {
+      id: adminEmployee.id,
+      email: adminEmployee.full_name,
+      displayName: adminEmployee.full_name,
+      role: "ADMIN",
+    });
 
-  response.json({ token, user: tokens.get(token) });
+    response.json({ token, user: tokens.get(token) });
+    return;
+  }
+
+  response.status(401).json({ error: "Invalid login name or password." });
 });
 
 app.get("/api/auth/me", requireAuth(), (request, response) => {
@@ -160,21 +177,34 @@ app.get("/api/timesheets/all", requireAuth(), (_request, response) => {
 });
 
 app.post("/api/caleb/employees", requireAuth("CALEB"), (request, response) => {
-  const { fullName, pin, nfcUid } = request.body || {};
-  const error = validateEmployeeInput({ fullName, pin, nfcUid }, true);
+  const { fullName, pin, nfcUid, adminAccess, adminPassword } = request.body || {};
+  const error = validateEmployeeInput({ fullName, pin, nfcUid, adminAccess, adminPassword }, true);
   if (error) {
     response.status(400).json({ error });
     return;
   }
 
   try {
-    response.status(201).json({ employee: createEmployee({ fullName, pin, nfcUid }) });
+    response.status(201).json({ employee: createEmployee({ fullName, pin, nfcUid, adminAccess, adminPassword }) });
   } catch (error_) {
     response.status(400).json({ error: friendlySqliteError(error_) });
   }
 });
 
 app.put("/api/caleb/employees/:id", requireAuth("CALEB"), (request, response) => {
+  const existing = getEmployeeById(Number(request.params.id));
+  const wantsAdminAccess = request.body?.adminAccess === true;
+
+  if (wantsAdminAccess && !existing?.hasAdminPassword && !validAdminPassword(request.body?.adminPassword)) {
+    response.status(400).json({ error: "Enter an admin password before allowing admin access." });
+    return;
+  }
+
+  if (request.body?.adminPassword && !validAdminPassword(request.body.adminPassword)) {
+    response.status(400).json({ error: "Admin password must be at least 4 characters." });
+    return;
+  }
+
   try {
     const employee = updateEmployee(Number(request.params.id), request.body || {});
     if (!employee) {
@@ -273,7 +303,7 @@ function requireAuth(role) {
   };
 }
 
-function validateEmployeeInput({ fullName, pin, nfcUid }, requirePin) {
+function validateEmployeeInput({ fullName, pin, nfcUid, adminAccess, adminPassword }, requirePin) {
   if (!fullName || String(fullName).trim().length < 2) {
     return "Full name is required.";
   }
@@ -286,7 +316,15 @@ function validateEmployeeInput({ fullName, pin, nfcUid }, requirePin) {
     return "Assign a card before saving the employee.";
   }
 
+  if (adminAccess && !validAdminPassword(adminPassword)) {
+    return "Admin password must be at least 4 characters.";
+  }
+
   return null;
+}
+
+function validAdminPassword(password) {
+  return typeof password === "string" && password.trim().length >= 4;
 }
 
 function friendlySqliteError(error) {

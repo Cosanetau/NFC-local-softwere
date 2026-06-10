@@ -8,7 +8,7 @@ The app runs on a Windows PC, stores data in a local SQLite database, and is acc
 
 - Tablet sign-in page at `/`
 - Employee clock in/out with NFC card UID
-- 4-digit employee PIN required for breaks and ending shifts
+- 4-digit employee PIN required for starting shifts, breaks, and ending shifts
 - Status tracking:
   - Off Shift
   - Working
@@ -17,6 +17,7 @@ The app runs on a Windows PC, stores data in a local SQLite database, and is acc
 - One lunch break per shift
 - Unlimited individually recorded smoke breaks
 - Admin view-only page at `/admin`
+- Caleb-controlled employee admin access with staff name/password login
 - Individual printable timesheets at `/admin/employee/:employeeId`
 - All staff printable payroll report at `/admin/all`
 - Caleb management page at `/caleb`
@@ -41,6 +42,8 @@ Alternative: use an Android tablet/browser setup that supports the required NFC/
 
 - Email: `Caleb@westcoastautoair.com.au`
 - Password: `1716`
+
+Caleb can allow selected employees to access the Admin page by ticking **Allow admin access** on the Caleb page and setting an admin password. Those employees log in at `/login` with their staff name and admin password.
 
 You can override these before first run with environment variables:
 
@@ -173,5 +176,6 @@ If NFC is not enabled, use the built-in reader test panel for setup/testing only
 
 - Caleb password is hashed locally.
 - Employee PINs are hashed locally.
+- Employee admin passwords are hashed locally.
 - PINs cannot be viewed after saving; Caleb can reset them.
 - No cloud services are used.

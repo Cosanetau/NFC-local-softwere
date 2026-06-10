@@ -32,6 +32,8 @@ export function migrate() {
       pin_hash TEXT NOT NULL,
       nfc_uid TEXT UNIQUE,
       active INTEGER NOT NULL DEFAULT 1,
+      admin_access INTEGER NOT NULL DEFAULT 0,
+      admin_password_hash TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
@@ -57,6 +59,9 @@ export function migrate() {
     CREATE INDEX IF NOT EXISTS idx_time_events_employee_time ON time_events(employee_id, event_time, id);
     CREATE INDEX IF NOT EXISTS idx_time_events_time ON time_events(event_time);
   `);
+
+  addColumnIfMissing("employees", "admin_access", "INTEGER NOT NULL DEFAULT 0");
+  addColumnIfMissing("employees", "admin_password_hash", "TEXT");
 }
 
 export function seedCalebUser() {
@@ -88,6 +93,8 @@ export function publicEmployee(employee) {
     fullName: employee.full_name,
     nfcUid: employee.nfc_uid,
     active: Boolean(employee.active),
+    adminAccess: Boolean(employee.admin_access),
+    hasAdminPassword: Boolean(employee.admin_password_hash),
     createdAt: employee.created_at,
     updatedAt: employee.updated_at,
     status: getEmployeeStatus(employee.id),
@@ -96,6 +103,12 @@ export function publicEmployee(employee) {
 
 export function findUserByEmail(email) {
   return db.prepare("SELECT * FROM users WHERE lower(email) = lower(?)").get(email);
+}
+
+export function findAdminEmployeeByName(name) {
+  return db
+    .prepare("SELECT * FROM employees WHERE lower(full_name) = lower(?) AND active = 1 AND admin_access = 1")
+    .get(String(name || "").trim());
 }
 
 export function verifyPassword(password, hash) {
@@ -122,25 +135,46 @@ export function getEmployeeByUid(uid) {
   return publicEmployee(db.prepare("SELECT * FROM employees WHERE lower(nfc_uid) = lower(?)").get(normaliseUid(uid)));
 }
 
-export function createEmployee({ fullName, pin, nfcUid }) {
+export function createEmployee({ fullName, pin, nfcUid, adminAccess = false, adminPassword = "" }) {
   const now = nowIso();
   const result = db
-    .prepare("INSERT INTO employees (full_name, pin_hash, nfc_uid, active, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)")
-    .run(fullName.trim(), bcrypt.hashSync(pin, 12), normaliseUid(nfcUid), now, now);
+    .prepare(
+      "INSERT INTO employees (full_name, pin_hash, nfc_uid, active, admin_access, admin_password_hash, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?, ?, ?)",
+    )
+    .run(
+      fullName.trim(),
+      bcrypt.hashSync(pin, 12),
+      normaliseUid(nfcUid),
+      adminAccess ? 1 : 0,
+      adminAccess && adminPassword ? bcrypt.hashSync(adminPassword, 12) : null,
+      now,
+      now,
+    );
 
   return getEmployeeById(result.lastInsertRowid);
 }
 
-export function updateEmployee(id, { fullName, nfcUid, active }) {
+export function updateEmployee(id, { fullName, nfcUid, active, adminAccess, adminPassword }) {
   const employee = db.prepare("SELECT * FROM employees WHERE id = ?").get(id);
   if (!employee) {
     return null;
   }
 
-  db.prepare("UPDATE employees SET full_name = ?, nfc_uid = ?, active = ?, updated_at = ? WHERE id = ?").run(
+  const nextAdminAccess = adminAccess === undefined ? employee.admin_access : adminAccess ? 1 : 0;
+  const nextAdminPasswordHash = adminPassword
+    ? bcrypt.hashSync(String(adminPassword), 12)
+    : nextAdminAccess
+      ? employee.admin_password_hash
+      : null;
+
+  db.prepare(
+    "UPDATE employees SET full_name = ?, nfc_uid = ?, active = ?, admin_access = ?, admin_password_hash = ?, updated_at = ? WHERE id = ?",
+  ).run(
     fullName?.trim() || employee.full_name,
     nfcUid === undefined ? employee.nfc_uid : normaliseUid(nfcUid),
     active === undefined ? employee.active : active ? 1 : 0,
+    nextAdminAccess,
+    nextAdminPasswordHash,
     nowIso(),
     id,
   );
@@ -231,7 +265,7 @@ export function getAllowedActions(employeeId) {
   const lunchStarted = shiftEvents.some((event) => event.event_type === "START_LUNCH");
 
   if (status === STATUS.OFF_SHIFT) {
-    return [{ type: "START_SHIFT", label: "Start Shift", requiresPin: false }];
+    return [{ type: "START_SHIFT", label: "Start Shift", requiresPin: true }];
   }
 
   if (status === STATUS.LUNCH) {
@@ -397,4 +431,11 @@ function findLastIndex(items, predicate) {
     }
   }
   return -1;
+}
+
+function addColumnIfMissing(tableName, columnName, definition) {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  if (!columns.some((column) => column.name === columnName)) {
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+  }
 }

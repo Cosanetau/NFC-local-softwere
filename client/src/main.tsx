@@ -8,6 +8,7 @@ type Role = "ADMIN" | "CALEB";
 type User = {
   id: number;
   email: string;
+  displayName?: string;
   role: Role;
 };
 
@@ -16,6 +17,8 @@ type Employee = {
   fullName: string;
   nfcUid: string | null;
   active: boolean;
+  adminAccess: boolean;
+  hasAdminPassword: boolean;
   status: string;
 };
 
@@ -201,7 +204,7 @@ function SignInPage() {
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = React.useState("Caleb@westcoastautoair.com.au");
+  const [identifier, setIdentifier] = React.useState("Caleb@westcoastautoair.com.au");
   const [password, setPassword] = React.useState("");
   const [error, setError] = React.useState("");
 
@@ -213,7 +216,7 @@ function LoginPage() {
       const result = await api<{ token: string; user: User }>("/api/auth/login", {
         method: "POST",
         auth: false,
-        body: { email, password },
+        body: { identifier, password },
       });
       localStorage.setItem(authKey, JSON.stringify(result));
       navigate(result.user.role === "CALEB" ? "/caleb" : "/admin");
@@ -227,7 +230,7 @@ function LoginPage() {
       <form className="card form" onSubmit={login}>
         <h1>Management Login</h1>
         {error && <div className="error">{error}</div>}
-        <label>Email<input value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+        <label>Email or Staff Name<input value={identifier} onChange={(event) => setIdentifier(event.target.value)} /></label>
         <label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} /></label>
         <button>Log In</button>
         <Link to="/">Back to sign in</Link>
@@ -364,6 +367,8 @@ function EmployeeForm({ onSaved }: { onSaved: () => Promise<void> }) {
   const [fullName, setFullName] = React.useState("");
   const [pin, setPin] = React.useState("");
   const [nfcUid, setNfcUid] = React.useState("");
+  const [adminAccess, setAdminAccess] = React.useState(false);
+  const [adminPassword, setAdminPassword] = React.useState("");
   const [waiting, setWaiting] = React.useState(false);
   const [since, setSince] = React.useState(Date.now());
   const [error, setError] = React.useState("");
@@ -391,11 +396,13 @@ function EmployeeForm({ onSaved }: { onSaved: () => Promise<void> }) {
     try {
       await api("/api/caleb/employees", {
         method: "POST",
-        body: { fullName, pin, nfcUid },
+        body: { fullName, pin, nfcUid, adminAccess, adminPassword },
       });
       setFullName("");
       setPin("");
       setNfcUid("");
+      setAdminAccess(false);
+      setAdminPassword("");
       await onSaved();
     } catch (error_) {
       setError(getError(error_));
@@ -408,6 +415,13 @@ function EmployeeForm({ onSaved }: { onSaved: () => Promise<void> }) {
       {error && <div className="error">{error}</div>}
       <label>Full Name<input value={fullName} onChange={(event) => setFullName(event.target.value)} /></label>
       <label>4 Digit PIN<input inputMode="numeric" maxLength={4} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))} /></label>
+      <label className="checkbox">
+        <input type="checkbox" checked={adminAccess} onChange={(event) => setAdminAccess(event.target.checked)} />
+        Allow admin access
+      </label>
+      {adminAccess && (
+        <label>Admin Password<input type="password" value={adminPassword} onChange={(event) => setAdminPassword(event.target.value)} /></label>
+      )}
       <label>Assigned Card<input readOnly value={nfcUid} placeholder="Click Assign Card, then tap card" /></label>
       <button type="button" className="secondary" onClick={() => { setSince(Date.now()); setWaiting(true); }}>
         {waiting ? "Waiting For Card..." : "Assign Card"}
@@ -419,6 +433,7 @@ function EmployeeForm({ onSaved }: { onSaved: () => Promise<void> }) {
 
 function EmployeeManager({ employees, onChanged }: { employees: Employee[]; onChanged: (message: string) => Promise<void> }) {
   const [pinByEmployee, setPinByEmployee] = React.useState<Record<number, string>>({});
+  const [adminPasswordByEmployee, setAdminPasswordByEmployee] = React.useState<Record<number, string>>({});
 
   async function updateEmployee(employee: Employee, patch: Partial<Employee>) {
     await api(`/api/caleb/employees/${employee.id}`, {
@@ -427,9 +442,41 @@ function EmployeeManager({ employees, onChanged }: { employees: Employee[]; onCh
         fullName: patch.fullName ?? employee.fullName,
         nfcUid: patch.nfcUid ?? employee.nfcUid,
         active: patch.active ?? employee.active,
+        adminAccess: patch.adminAccess ?? employee.adminAccess,
       },
     });
     await onChanged("Employee updated.");
+  }
+
+  async function updateAdminAccess(employee: Employee, adminAccess: boolean) {
+    const adminPassword = adminPasswordByEmployee[employee.id] || "";
+    await api(`/api/caleb/employees/${employee.id}`, {
+      method: "PUT",
+      body: {
+        fullName: employee.fullName,
+        nfcUid: employee.nfcUid,
+        active: employee.active,
+        adminAccess,
+        adminPassword: adminPassword || undefined,
+      },
+    });
+    setAdminPasswordByEmployee({ ...adminPasswordByEmployee, [employee.id]: "" });
+    await onChanged(adminAccess ? "Admin access enabled." : "Admin access disabled.");
+  }
+
+  async function changeAdminPassword(employee: Employee) {
+    await api(`/api/caleb/employees/${employee.id}`, {
+      method: "PUT",
+      body: {
+        fullName: employee.fullName,
+        nfcUid: employee.nfcUid,
+        active: employee.active,
+        adminAccess: employee.adminAccess,
+        adminPassword: adminPasswordByEmployee[employee.id] || "",
+      },
+    });
+    setAdminPasswordByEmployee({ ...adminPasswordByEmployee, [employee.id]: "" });
+    await onChanged("Admin password changed.");
   }
 
   async function changePin(employee: Employee) {
@@ -458,6 +505,14 @@ function EmployeeManager({ employees, onChanged }: { employees: Employee[]; onCh
             <input value={employee.fullName} onChange={(event) => updateEmployee(employee, { fullName: event.target.value })} />
             <span>{employee.status}</span>
             <span>{employee.nfcUid || "No Card"}</span>
+            <label className="checkbox compact">
+              <input
+                type="checkbox"
+                checked={employee.adminAccess}
+                onChange={(event) => updateAdminAccess(employee, event.target.checked)}
+              />
+              Admin
+            </label>
             <button onClick={() => updateEmployee(employee, { active: !employee.active })}>
               {employee.active ? "Deactivate" : "Activate"}
             </button>
@@ -469,6 +524,13 @@ function EmployeeManager({ employees, onChanged }: { employees: Employee[]; onCh
               onChange={(event) => setPinByEmployee({ ...pinByEmployee, [employee.id]: event.target.value.replace(/\D/g, "").slice(0, 4) })}
             />
             <button onClick={() => changePin(employee)}>Change PIN</button>
+            <input
+              placeholder={employee.hasAdminPassword ? "New Admin Password" : "Admin Password"}
+              type="password"
+              value={adminPasswordByEmployee[employee.id] || ""}
+              onChange={(event) => setAdminPasswordByEmployee({ ...adminPasswordByEmployee, [employee.id]: event.target.value })}
+            />
+            <button onClick={() => changeAdminPassword(employee)}>Save Admin Password</button>
             <button className="danger" onClick={() => remove(employee)}>Remove</button>
           </div>
         ))}
@@ -581,7 +643,7 @@ function Header({ title }: { title: string }) {
     <header className="header">
       <div>
         <h1>{title}</h1>
-        {auth?.user && <p>{auth.user.email}</p>}
+        {auth?.user && <p>{auth.user.displayName || auth.user.email}</p>}
       </div>
       <nav>
         <Link to="/">Sign In</Link>
