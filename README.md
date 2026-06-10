@@ -85,11 +85,10 @@ Open:
 
 ## Production/local 24-7 run
 
-Build the browser files:
+Install dependencies and start the app:
 
 ```cmd
 npm install
-npm run build
 npm start
 ```
 
@@ -99,6 +98,15 @@ Open:
 - Tablet on same network: `http://PC-IP-ADDRESS:3005`
 
 Keep the Command Prompt window running, or use Windows Task Scheduler/NSSM to run `npm start` when the PC starts.
+
+If you see `ENOENT: no such file or directory, stat ...\dist\index.html`, stop the server with `Ctrl + C`, then run:
+
+```cmd
+npm run build
+npm start
+```
+
+Newer copies of this project run the build automatically when `npm start` is used.
 
 ## Moving to another PC
 
