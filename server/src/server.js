@@ -244,7 +244,7 @@ app.delete("/api/caleb/events/:id", requireAuth("CALEB"), (request, response) =>
 
 const clientDist = path.resolve(__dirname, "../../dist");
 app.use(express.static(clientDist));
-app.get("*", (_request, response) => {
+app.get(/.*/, (_request, response) => {
   response.sendFile(path.join(clientDist, "index.html"));
 });
 
