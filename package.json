@@ -8,6 +8,8 @@
     "dev": "concurrently \"vite --host 0.0.0.0\" \"node --watch server/src/server.js\"",
     "build": "vite build",
     "start": "npm run build && node server/src/server.js",
+    "start:nfc": "npm run build && concurrently \"node server/src/server.js\" \"python scripts/acr122u_bridge.py\"",
+    "nfc:windows": "python scripts/acr122u_bridge.py",
     "serve": "node server/src/server.js",
     "check": "tsc --noEmit"
   },

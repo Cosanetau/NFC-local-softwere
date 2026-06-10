@@ -129,23 +129,34 @@ npm start
 
 ## NFC reader setup on Windows
 
-The NFC service is optional so the app can still run without a reader during setup.
+The ACR122U must be plugged into the Windows PC running this app. A browser on an iPad cannot read the USB reader directly.
 
-To enable an ACR122U reader on the Windows host PC:
+Recommended Windows setup:
 
 1. Install the ACR122U/PCSC driver.
-2. Install the optional NFC package on that Windows PC:
+2. Make sure Python works:
 
    ```cmd
-   npm install nfc-pcsc
+   python --version
    ```
 
-3. Start the app with NFC enabled:
+3. Start the app with the Windows NFC bridge:
 
    ```cmd
-   set NFC_ENABLED=true
-   npm start
+   npm run start:nfc
    ```
+
+The included Python bridge reads the ACR122U through Windows `winscard.dll` and posts card UIDs to the local app. It avoids the native `nfc-pcsc` npm build tools.
+
+Optional Node NFC setup:
+
+```cmd
+npm install nfc-pcsc
+set NFC_ENABLED=true
+npm start
+```
+
+If `npm install nfc-pcsc` fails with Visual Studio or Python errors, use `npm run start:nfc` instead.
 
 If NFC is not enabled, use the built-in reader test panel for setup/testing only.
 
