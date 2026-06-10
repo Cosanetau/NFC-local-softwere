@@ -119,7 +119,7 @@ export function getEmployeeById(id) {
 }
 
 export function getEmployeeByUid(uid) {
-  return publicEmployee(db.prepare("SELECT * FROM employees WHERE lower(nfc_uid) = lower(?)").get(uid));
+  return publicEmployee(db.prepare("SELECT * FROM employees WHERE lower(nfc_uid) = lower(?)").get(normaliseUid(uid)));
 }
 
 export function createEmployee({ fullName, pin, nfcUid }) {
