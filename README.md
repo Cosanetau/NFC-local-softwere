@@ -6,16 +6,15 @@ Generate a printable PDF certificate for employee recognition.
 
 ```bash
 pip install -r requirements.txt
-python generate_certificate.py --name "Jane Smith"
+python3 generate_certificate.py
 ```
 
-This creates `certificate_of_excellence.pdf` in the current directory.
+This creates `certificate_of_excellence.pdf` in the current directory. The employee name is left as a blank line so you can write it by hand when printing.
 
 ## Options
 
 | Option | Description |
 |--------|-------------|
-| `--name` | Employee name (default: `[Employee Name]`) |
 | `--date` | Award date, e.g. `3 July 2026` (default: today) |
 | `--output` | Output filename (default: `certificate_of_excellence.pdf`) |
 

@@ -57,7 +57,7 @@ def draw_title(c: canvas.Canvas, y: float) -> None:
     c.line(cx - line_w / 2, y - 18, cx + line_w / 2, y - 18)
 
 
-def draw_body(c: canvas.Canvas, employee_name: str, award_date: str) -> None:
+def draw_body(c: canvas.Canvas, award_date: str) -> None:
     cx = PAGE_WIDTH / 2
     y = PAGE_HEIGHT - 2.4 * inch
 
@@ -66,14 +66,10 @@ def draw_body(c: canvas.Canvas, employee_name: str, award_date: str) -> None:
     c.drawCentredString(cx, y, "This certificate is proudly presented to")
 
     y -= 0.85 * inch
-    c.setFillColor(NAVY)
-    c.setFont("Times-BoldItalic", 32)
-    c.drawCentredString(cx, y, employee_name)
-
     c.setStrokeColor(DARK_GOLD)
     c.setLineWidth(0.75)
-    name_w = max(c.stringWidth(employee_name, "Times-BoldItalic", 32) + 40, 3.5 * inch)
-    c.line(cx - name_w / 2, y - 8, cx + name_w / 2, y - 8)
+    name_w = 4.5 * inch
+    c.line(cx - name_w / 2, y, cx + name_w / 2, y)
 
     y -= 1.1 * inch
     c.setFillColor(colors.HexColor("#444444"))
@@ -134,7 +130,6 @@ def draw_signatures(c: canvas.Canvas) -> None:
 
 def generate_certificate(
     output_path: Path,
-    employee_name: str,
     award_date: str | None = None,
 ) -> Path:
     if award_date is None:
@@ -148,7 +143,7 @@ def generate_certificate(
 
     draw_border(c)
     draw_title(c, PAGE_HEIGHT - 1.35 * inch)
-    draw_body(c, employee_name, award_date)
+    draw_body(c, award_date)
     draw_signatures(c)
 
     c.save()
@@ -157,11 +152,6 @@ def generate_certificate(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate a Certificate of Excellence PDF")
-    parser.add_argument(
-        "--name",
-        default="[Employee Name]",
-        help="Name of the employee receiving the certificate",
-    )
     parser.add_argument(
         "--date",
         default=None,
@@ -176,7 +166,6 @@ def main() -> None:
 
     out = generate_certificate(
         Path(args.output),
-        employee_name=args.name,
         award_date=args.date,
     )
     print(f"Certificate saved to: {out.resolve()}")
