@@ -9,13 +9,12 @@ pip install -r requirements.txt
 python3 generate_certificate.py
 ```
 
-This creates `certificate_of_excellence.pdf` in the current directory. The employee name is left as a blank line so you can write it by hand when printing.
+This creates `certificate_of_excellence.pdf` in the current directory — portrait A4 with a blank name line and a large empty middle section for pasting a Google review photocopy.
 
 ## Options
 
 | Option | Description |
 |--------|-------------|
-| `--date` | Award date, e.g. `3 July 2026` (default: today) |
 | `--output` | Output filename (default: `certificate_of_excellence.pdf`) |
 
 ## Signatures
