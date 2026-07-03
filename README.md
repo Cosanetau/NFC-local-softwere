@@ -9,7 +9,7 @@ pip install -r requirements.txt
 python3 generate_certificate.py
 ```
 
-This creates `certificate_of_excellence.pdf` in the current directory — portrait A4 with a blank name line and a large empty middle section for pasting a Google review photocopy.
+Portrait A4 certificate with the Google review embedded in the centre.
 
 ## Options
 
